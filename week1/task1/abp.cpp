@@ -48,7 +48,7 @@ int main() {
         y_actual[i] = particles[i].y_actual;
     }
 
-    ofstream msd_file("masd.dat");             // File to store MSD data
+    ofstream msd_file("C:/Users/Maitreya/mips_simulation/week1/task1/msd.dat");             // File to store MSD data
 
     for (int t = 0; t < steps; t++) {
         for (int i = 0; i < N; ++i) {
