@@ -1,0 +1,15 @@
+# Ignore compiled C++ files
+*.o
+*.exe
+abp
+
+# Ignore simulation output
+output/
+*.dat
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore VS Code settings
+.vscode/
