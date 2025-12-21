@@ -51,13 +51,14 @@ void build_neighbor_list(const vector<Particle>& particles) {
     neighbor_list.resize(N);
 
     for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
+        for (int j = i + 1; j < N; ++j) {
             if (i==j) continue;
             double dx = minimum_image(particles[i].x-particles[j].x);
             double dy = minimum_image(particles[i].y-particles[j].y);
             double r = sqrt(dx*dx + dy*dy);
             if (r < r_list) {
                 neighbor_list[i].push_back(j);
+                neighbor_list[j].push_back(i);
             }
         }
     }
@@ -73,6 +74,8 @@ int main() {
         particles[i].y = uni(rng) * L;
         particles[i].x_reference = particles[i].x;
         particles[i].y_reference = particles[i].y;
+        particles[i].x_actual = particles[i].x;
+        particles[i].y_actual = particles[i].y;
         particles[i].theta = uni(rng) * 2 * PI;
 
         x_actual[i] = particles[i].x_actual;
@@ -89,11 +92,13 @@ int main() {
 
         for (int i = 0; i < N; ++i) {
             for (int j : neighbor_list[i]) {
+                if (j <= i) continue; // Avoid double counting
+
                 double dx = minimum_image(particles[i].x - particles[j].x);
                 double dy = minimum_image(particles[i].y - particles[j].y);
                 double r = sqrt(dx * dx + dy * dy);
 
-                if (r < r_cutoff) {
+                if (r < r_cutoff && r > 1e-12) { // Avoid division by zero
                     double overlap = r_cutoff - r;
                     double force_mag = overlap; // Harmonic repulsion
                     fx[i] += force_mag * (dx / r);
