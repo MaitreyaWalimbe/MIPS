@@ -6,18 +6,22 @@
 #include <sstream>             // For string stream if needed
 using namespace std;
 
+const double PI = acos(-1.0);
+
+
 int N = 500;                   // Number of particles
 double a = 1.0;                // Particle radius
 double Dr = 0.1;               // Rotational diffusion coefficient
 double dt = 0.01;              // Time step
-int steps = 10000;             // Number of simulation steps
+int steps = 15000;             // Number of simulation steps
+int equilibration_steps = 5000; // Equilibration steps
 int output_interval = 100;     // Output interval
 
 double r_cutoff = 2.0 * a;        // Cutoff distance for repulsion
 double r_skin = 0.2 * a;          // Skin distance for neighbor list
 double r_list = r_cutoff + r_skin; // Neighbor list cutoff
 
-const double PI = acos(-1.0);
+double k_rep = 100.0;          // Repulsion strength
 
 mt19937 rng(42);               // Random number generator with fixed seed
 normal_distribution<double> gauss(0.0, 1.0);        // Defines the distribution only
@@ -69,7 +73,7 @@ int main() {
     vector<double> pe_list = {5.0, 20.0, 50.0, 100.0}; // Different Péclet numbers to simulate
 
     for (double phi : phi_list) {
-        L = sqrt(N / phi);
+        L = sqrt(N * PI * a * a / phi);
 
         for (double Pe : pe_list) {
             double v0 = Pe * Dr * a;   // Self-propulsion speed
@@ -77,8 +81,8 @@ int main() {
             cout << "Running simulation for phi=" << phi << ", Pe=" << Pe << endl;
 
             vector<Particle> particles(N);
-            vector<double> x_actual(N);                // To store actual positions
-            vector<double> y_actual(N);
+            vector<double> x_0(N);                // To store actual positions
+            vector<double> y_0(N);
 
             for (int i = 0; i < N; ++i) {              // Initialization of particles
                 particles[i].x = uni(rng) * L;
@@ -88,9 +92,6 @@ int main() {
                 particles[i].x_actual = particles[i].x;
                 particles[i].y_actual = particles[i].y;
                 particles[i].theta = uni(rng) * 2 * PI;
-
-                x_actual[i] = particles[i].x_actual;
-                y_actual[i] = particles[i].y_actual;
             }
 
             build_neighbor_list(particles);          // Initial neighbor list
@@ -99,6 +100,10 @@ int main() {
             fname << "C:/Users/Maitreya/mips_simulation/week1/task3/"<< "msd_phi" << int(phi*10) << "_Pe" << int(Pe) << ".dat";
             cout << "Attempting to write to:\n" << fname.str() << endl;
             ofstream msd_file(fname.str());
+            if (!msd_file.is_open()) {
+            cerr << "ERROR: Could not open file:\n" << fname.str() << endl;
+            return 1;  // or continue;
+            }
 
             for (int t = 0; t < steps; t++) {
                 vector<double> fx(N, 0.0);    // Forces in x
@@ -113,7 +118,7 @@ int main() {
 
                         if (r < r_cutoff && r > 1e-12) { // Avoid division by zero
                             double overlap = r_cutoff - r;
-                            double force_mag = overlap; // Harmonic repulsion
+                            double force_mag = k_rep * overlap; // Harmonic repulsion
                             fx[i] += force_mag * (dx / r);
                             fy[i] += force_mag * (dy / r);
                             fx[j] -= force_mag * (dx / r);        // To uphold Newton's third law
@@ -140,23 +145,31 @@ int main() {
                     particles[i].x = periodic(particles[i].x);    // Apply periodic boundary condition
                     particles[i].y = periodic(particles[i].y);
 
-                    double drx = minimum_image(particles[i].x - particles[i].x_reference);
-                    double dry = minimum_image(particles[i].y - particles[i].y_reference);
+                    double drx = particles[i].x_actual - particles[i].x_reference;
+                    double dry = particles[i].y_actual - particles[i].y_reference;
                     max_displacement = max(max_displacement, sqrt(drx*drx + dry*dry));
                 }
 
                 if (max_displacement > r_skin / 2.0) {
                     for (int i = 0; i < N; ++i) {
-                        particles[i].x_reference = particles[i].x;
-                        particles[i].y_reference = particles[i].y;
+                        particles[i].x_reference = particles[i].x_actual;
+                        particles[i].y_reference = particles[i].y_actual;
                     }
                     build_neighbor_list(particles);      // Rebuild neighbor list
                 }
-                if (t % output_interval == 0) {
+
+                if (t == equilibration_steps) {
+                    for (int i = 0; i < N; ++i) {      // Reset reference positions for MSD
+                        x_0[i] = particles[i].x_actual;
+                        y_0[i] = particles[i].y_actual;
+                    }
+                }
+
+                if (t > equilibration_steps && t % output_interval == 0) {
                     double msd_val = 0.0;
                     for (int i = 0; i < N; ++i) {
-                        double dx = particles[i].x_actual - x_actual[i];
-                        double dy = particles[i].y_actual - y_actual[i];
+                        double dx = particles[i].x_actual - x_0[i];
+                        double dy = particles[i].y_actual - y_0[i];
                         msd_val += dx * dx + dy * dy;
                     }
                     msd_val /= N;

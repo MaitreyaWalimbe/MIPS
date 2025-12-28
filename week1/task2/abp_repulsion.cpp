@@ -5,11 +5,13 @@
 #include <fstream>             // For file output if needed
 using namespace std;
 
+const double PI = acos(-1.0);
+
 int N = 500;                   // Number of particles
 double phi = 0.4;              // Packing fraction
 double a = 1.0;                // Particle radius
 double v0 = 1.0;               // Self-propulsion speed
-double L = sqrt(N / phi);      // Box size
+double L = sqrt(N * PI * a * a / phi);      // Box size
 double Dr = 0.1;               // Rotational diffusion coefficient
 double dt = 0.01;              // Time step
 int steps = 10000;             // Number of simulation steps
@@ -18,8 +20,6 @@ int output_interval = 100;     // Output interval
 double r_cutoff = 2.0 * a;        // Cutoff distance for repulsion
 double r_skin = 0.2 * a;          // Skin distance for neighbor list
 double r_list = r_cutoff + r_skin; // Neighbor list cutoff
-
-const double PI = acos(-1.0);
 
 mt19937 rng(42);               // Random number generator with fixed seed
 normal_distribution<double> gauss(0.0, 1.0);        // Defines the distribution only
