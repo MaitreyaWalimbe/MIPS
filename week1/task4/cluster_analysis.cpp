@@ -7,13 +7,13 @@
 using namespace std;
 
 const double PI = acos(-1.0);
-int N_ens = 5;               // Number of ensembles
+int N_ens = 4;               // Number of ensembles
 
 
 int N = 500;                   // Number of particles
 double a = 1.0;                // Particle diameter
 double phi = 0.4;              // Packing fraction
-double Dr = 0.001;               // Rotational diffusion coefficient
+double Dr = 0.001;               // Rotational diffusion coefficient     // worked for 0.001
 double Dt = 0.0;               // Translational diffusion coefficient
 double dt = 0.005;              // Time step
 int steps = 20000;             // Number of simulation steps
@@ -28,7 +28,7 @@ double r_list = r_cutoff + r_skin; // Neighbor list cutoff
 
 double r_cluster = 1.2 * a;    // 1.2 * diameter for cluster analysis
 
-double k_rep = 100.0;          // Repulsion strength (changed from 100 to better observe mips curve)
+double k_rep = 200.0;          // Repulsion strength (changed from 100 to better observe mips curve)
 double mu = 1.0;               // Mobility
 
 mt19937 rng(42);               // Random number generator with fixed seed
@@ -120,7 +120,7 @@ int largest_cluster_size(const vector<Particle>& particles) {
 }
 
 int main() {
-    vector<double> pe_list = {2, 5, 8,
+    vector<double> pe_list = {0.01, 0.05, 0.1, 0.5, 1, 2, 5, 8,
                               10, 12, 15, 18, 22, 26, 30, 35, 40, 45, 50 , 55, 60,
                               65, 75, 90, 100};
 
